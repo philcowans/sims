@@ -1289,9 +1289,15 @@ prottrap:
                     TM = 1;
                     break;
                 case OP_RND:
+                    /* If MQ bit 1 is set, RND increases the magnitude
+                       of AC by one in bit 35; the sign is unchanged.
+                       A carry into P sets overflow. Adding +1 with
+                       iadd was wrong for a negative AC: -1 became -0. */
                     if (MQ & ONEBIT) {
-                        SR = 1;
-                        goto iadd;
+                        t_uint64 mag = (AC & AMMASK) + 1;
+                        if ((mag ^ AC) & APSIGN)
+                            acoflag = 1;
+                        AC = (AC & AMSIGN) | (mag & AMMASK);
                     }
                     break;
                 case OP_FRN:
